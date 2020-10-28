@@ -1,0 +1,79 @@
+
+UseSerialGC
+
+UseParallelGCya
+
+UseConcMarkSweepGC
+
+结论：
+1.当使用相同的GC策略，使用不同的堆内存大小测试。
+内存越小，到达一个值，就OOM
+内存越大， fullGC次数就会发生次数变少，对应的YoungGC  次数也相应减少。
+
+
+2.固定堆内存大小为4G ，采用不同的策略 运行：
+1）并行GC的单次的GC的持续时间(Duration), 比  串行GC 的时间 要少 
+2）但是并行GC对应的对应的GC总时间变长了，user  和sys  时间都变长了
+
+3）G1就很快了，简直不是一个维度的测试，就是降维打击
+
+user – 此次垃圾回收, 垃圾收集线程消耗的所有CPU时间
+sys – 操作系统调用(OS call) 以及等待系统事件的时间
+
+
+
+
+
+
+
+D:\java_dev>java -XX:+UseSerialGC -Xms4g -Xmx4g  -XX:+PrintGCDetails -XX:+PrintGCDateStamps GCLogAnalysis
+正在执行...
+2020-10-28T20:28:52.216+0800: [GC (Allocation Failure) 2020-10-28T20:28:52.216+0800: [DefNew: 1118528K->139775K(1258304K), 0.0643410 secs] 1118528K->236810K(4054528K), 0.0651649 secs] [Times: user=0.02 sys=0.05, real=0.06 secs]
+2020-10-28T20:28:52.388+0800: [GC (Allocation Failure) 2020-10-28T20:28:52.388+0800: [DefNew: 1258303K->139775K(1258304K), 0.0763095 secs] 1355338K->381671K(4054528K), 0.0770900 secs] [Times: user=0.02 sys=0.05, real=0.08 secs]
+2020-10-28T20:28:52.561+0800: [GC (Allocation Failure) 2020-10-28T20:28:52.562+0800: [DefNew: 1258303K->139776K(1258304K), 0.0579398 secs] 1500199K->535849K(4054528K), 0.0590993 secs] [Times: user=0.03 sys=0.01, real=0.06 secs]
+2020-10-28T20:28:52.726+0800: [GC (Allocation Failure) 2020-10-28T20:28:52.726+0800: [DefNew: 1258304K->139775K(1258304K), 0.0626008 secs] 1654377K->696353K(4054528K), 0.0632423 secs] [Times: user=0.00 sys=0.06, real=0.06 secs]
+
+D:\java_dev>java -XX:+UseParallelGC -Xms4g -Xmx4g  -XX:+PrintGCDetails -XX:+PrintGCDateStamps GCLogAnalysis
+正在执行...
+2020-10-28T20:29:10.692+0800: [GC (Allocation Failure) [PSYoungGen: 1048576K->174575K(1223168K)] 1048576K->242104K(4019712K), 0.0242717 secs] [Times: user=0.06 sys=0.14, real=0.02 secs]
+2020-10-28T20:29:10.813+0800: [GC (Allocation Failure) [PSYoungGen: 1223151K->174580K(1223168K)] 1290680K->368056K(4019712K), 0.0309260 secs] [Times: user=0.11 sys=0.30, real=0.03 secs]
+2020-10-28T20:29:10.936+0800: [GC (Allocation Failure) [PSYoungGen: 1223156K->174590K(1223168K)] 1416632K->489766K(4019712K), 0.0290342 secs] [Times: user=0.19 sys=0.01, real=0.03 secs]
+2020-10-28T20:29:11.068+0800: [GC (Allocation Failure) [PSYoungGen: 1223166K->174587K(1223168K)] 1538342K->606685K(4019712K), 0.0291287 secs] [Times: user=0.25 sys=0.16, real=0.03 secs]
+2020-10-28T20:29:11.189+0800: [GC (Allocation Failure) [PSYoungGen: 1223163K->174591K(1223168K)] 1655261K->739566K(4019712K), 0.0308898 secs] [Times: user=0.26 sys=0.14, real=0.03 secs]
+2020-10-28T20:29:11.311+0800: [GC (Allocation Failure) [PSYoungGen: 1223167K->174583K(915968K)] 1788142K->857188K(3712512K), 0.0277858 secs] [Times: user=0.20 sys=0.00, real=0.03 secs]
+
+
+D:\java_dev>java -XX:+UseConcMarkSweepGC -Xms4g -Xmx4g  -XX:+PrintGCDetails -XX:+PrintGCDateStamps GCLogAnalysis
+正在执行...
+2020-10-28T20:30:58.928+0800: [GC (Allocation Failure) 2020-10-28T20:30:58.928+0800: [ParNew: 886080K->110719K(996800K), 0.0246751 secs] 886080K->211854K(4083584K), 0.0253884 secs] [Times: user=0.23 sys=0.17, real=0.03 secs]
+2020-10-28T20:30:59.039+0800: [GC (Allocation Failure) 2020-10-28T20:30:59.039+0800: [ParNew: 996799K->110719K(996800K), 0.0286362 secs] 1097934K->361954K(4083584K), 0.0293799 secs] [Times: user=0.19 sys=0.22, real=0.03 secs]
+2020-10-28T20:30:59.147+0800: [GC (Allocation Failure) 2020-10-28T20:30:59.147+0800: [ParNew: 996799K->110719K(996800K), 0.0589886 secs] 1248034K->510401K(4083584K), 0.0597249 secs] [Times: user=0.80 sys=0.02, real=0.06 secs]
+2020-10-28T20:30:59.289+0800: [GC (Allocation Failure) 2020-10-28T20:30:59.290+0800: [ParNew: 996799K->110720K(996800K), 0.0553283 secs] 1396481K->650642K(4083584K), 0.0563260 secs] [Times: user=0.78 sys=0.03, real=0.06 secs]
+2020-10-28T20:30:59.426+0800: [GC (Allocation Failure) 2020-10-28T20:30:59.426+0800: [ParNew: 996800K->110719K(996800K), 0.0606583 secs] 1536722K->806337K(4083584K), 0.0613116 secs] [Times: user=0.80 sys=0.02, real=0.06 secs]
+2020-10-28T20:30:59.570+0800: [GC (Allocation Failure) 2020-10-28T20:30:59.571+0800: [ParNew: 996799K->110718K(996800K), 0.0606641 secs] 1692417K->957940K(4083584K), 0.0614109 secs] [Times: user=0.78 sys=0.03, real=0.06 secs]
+
+D:\java_dev>java -XX:+UseG1GC -Xms4g -Xmx4g  -XX:+PrintGC  -XX:+PrintGCDateStamps GCLogAnalysis
+正在执行...
+2020-10-28T20:57:32.954+0800: [GC pause (G1 Evacuation Pause) (young) 204M->67M(4096M), 0.0082835 secs]
+2020-10-28T20:57:32.983+0800: [GC pause (G1 Evacuation Pause) (young) 245M->123M(4096M), 0.0103656 secs]
+2020-10-28T20:57:33.012+0800: [GC pause (G1 Evacuation Pause) (young) 301M->184M(4096M), 0.0102776 secs]
+2020-10-28T20:57:33.040+0800: [GC pause (G1 Evacuation Pause) (young) 362M->243M(4096M), 0.0099601 secs]
+2020-10-28T20:57:33.068+0800: [GC pause (G1 Evacuation Pause) (young) 421M->297M(4096M), 0.0100367 secs]
+2020-10-28T20:57:33.097+0800: [GC pause (G1 Evacuation Pause) (young) 475M->358M(4096M), 0.0107393 secs]
+2020-10-28T20:57:33.125+0800: [GC pause (G1 Evacuation Pause) (young) 536M->414M(4096M), 0.0097096 secs]
+2020-10-28T20:57:33.156+0800: [GC pause (G1 Evacuation Pause) (young) 616M->478M(4096M), 0.0109862 secs]
+2020-10-28T20:57:33.197+0800: [GC pause (G1 Evacuation Pause) (young) 736M->556M(4096M), 0.0127895 secs]
+2020-10-28T20:57:33.239+0800: [GC pause (G1 Evacuation Pause) (young) 844M->648M(4096M), 0.0138378 secs]
+2020-10-28T20:57:33.288+0800: [GC pause (G1 Evacuation Pause) (young) 980M->744M(4096M), 0.0157708 secs]
+2020-10-28T20:57:33.419+0800: [GC pause (G1 Evacuation Pause) (young) 1404M->900M(4096M), 0.0214878 secs]
+2020-10-28T20:57:33.494+0800: [GC pause (G1 Evacuation Pause) (young) 1444M->1026M(4096M), 0.0215350 secs]
+2020-10-28T20:57:33.595+0800: [GC pause (G1 Evacuation Pause) (young) 1770M->1195M(4096M), 0.0313395 secs]
+2020-10-28T20:57:33.758+0800: [GC pause (G1 Evacuation Pause) (young) 2193M->1386M(4096M), 0.0417953 secs]
+执行结束!共生成对象次数:22743
+
+
+
+
+
+
+
